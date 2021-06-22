@@ -1,4 +1,4 @@
-﻿namespace AngleSharp.Text
+namespace AngleSharp.Text
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +9,7 @@
     /// </summary>
     public static class StringBuilderPool
     {
-        private static readonly Stack<StringBuilder> _builder = new Stack<StringBuilder>();
+        private static readonly Stack<StringBuilder> _builder = new ();
         private static readonly Object _lock = new Object();
         private static Int32 _count = 4;
         private static Int32 _limit = 85000;
@@ -78,6 +78,31 @@
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Returns the given stringbuilder to the pool.
+        /// </summary>
+        /// <param name="sb">The stringbuilder to recycle.</param>
+        internal static void ReturnToPool(this StringBuilder sb)
+        {
+            lock (_lock)
+            {
+                var current = _builder.Count;
+
+                if (sb.Capacity > _limit)
+                {
+                    // Drop large instances
+                }
+                else if (current == _count)
+                {
+                    DropMinimum(sb);
+                }
+                else if (current < Math.Min(2, _count) || _builder.Peek().Capacity < sb.Capacity)
+                {
+                    _builder.Push(sb);
+                }
+            }
         }
 
         private static void DropMinimum(StringBuilder sb)

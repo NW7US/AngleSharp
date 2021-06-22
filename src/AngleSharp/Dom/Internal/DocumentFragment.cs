@@ -2,7 +2,6 @@ namespace AngleSharp.Dom
 {
     using AngleSharp.Text;
     using System;
-    using System.IO;
     using System.Linq;
 
     /// <summary>
@@ -12,7 +11,7 @@ namespace AngleSharp.Dom
     {
         #region Fields
 
-        private HtmlCollection<IElement> _elements;
+        private HtmlCollection<IElement>? _elements;
 
         #endregion
 
@@ -33,10 +32,10 @@ namespace AngleSharp.Dom
                 var child = root.FirstChild;
                 root.RemoveChild(child);
 
-                if (child is Node)
+                if (child is Node childNode)
                 {
                     Owner.AdoptNode(child);
-                    InsertBefore((Node)child, null, false);
+                    InsertBefore(childNode, null, false);
                 }
             }
         }
@@ -47,9 +46,9 @@ namespace AngleSharp.Dom
 
         public Int32 ChildElementCount => ChildNodes.OfType<Element>().Count();
 
-        public IHtmlCollection<IElement> Children => _elements ?? (_elements = new HtmlCollection<IElement>(this, deep: false));
+        public IHtmlCollection<IElement> Children => _elements ??= new HtmlCollection<IElement>(this, deep: false);
 
-        public IElement FirstElementChild
+        public IElement? FirstElementChild
         {
             get
             {
@@ -68,7 +67,7 @@ namespace AngleSharp.Dom
             }
         }
 
-        public IElement LastElementChild
+        public IElement? LastElementChild
         {
             get
             {
@@ -114,7 +113,7 @@ namespace AngleSharp.Dom
 
         public void Append(params INode[] nodes) => this.AppendNodes(nodes);
 
-        public IElement QuerySelector(String selectors) => ChildNodes.QuerySelector(selectors, null);
+        public IElement? QuerySelector(String selectors) => ChildNodes.QuerySelector(selectors, null);
 
         public IHtmlCollection<IElement> QuerySelectorAll(String selectors) => ChildNodes.QuerySelectorAll(selectors, null);
 
@@ -122,9 +121,9 @@ namespace AngleSharp.Dom
 
         public IHtmlCollection<IElement> GetElementsByTagName(String tagName) => ChildNodes.GetElementsByTagName(tagName);
 
-        public IHtmlCollection<IElement> GetElementsByTagNameNS(String namespaceURI, String tagName) => ChildNodes.GetElementsByTagName(namespaceURI, tagName);
+        public IHtmlCollection<IElement> GetElementsByTagNameNS(String? namespaceURI, String tagName) => ChildNodes.GetElementsByTagName(namespaceURI, tagName);
 
-        public IElement GetElementById(String elementId) => ChildNodes.GetElementById(elementId);
+        public IElement? GetElementById(String elementId) => ChildNodes.GetElementById(elementId);
 
         public override Node Clone(Document owner, Boolean deep)
         {

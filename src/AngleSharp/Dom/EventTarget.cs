@@ -1,4 +1,4 @@
-﻿namespace AngleSharp.Dom
+namespace AngleSharp.Dom
 {
     using AngleSharp.Dom.Events;
     using AngleSharp.Html;
@@ -13,13 +13,13 @@
     {
         #region Fields
 
-        private List<RegisteredEventListener> _listeners;
+        private List<RegisteredEventListener>? _listeners;
 
         #endregion
 
         #region Properties
 
-        private List<RegisteredEventListener> Listeners => _listeners ?? (_listeners = new List<RegisteredEventListener>());
+        private List<RegisteredEventListener> Listeners => _listeners ??= new List<RegisteredEventListener>();
 
         #endregion
 
@@ -43,16 +43,11 @@
         /// upward through the tree will not trigger a listener designated to
         /// use capture.
         /// </param>
-        public void AddEventListener(String type, DomEventHandler callback = null, Boolean capture = false)
+        public void AddEventListener(String type, DomEventHandler? callback = null, Boolean capture = false)
         {
             if (callback != null)
             {
-                Listeners.Add(new RegisteredEventListener
-                {
-                    Type = type,
-                    Callback = callback,
-                    IsCaptured = capture
-                });
+                Listeners.Add(new RegisteredEventListener(type, callback, capture));
             }
         }
 
@@ -70,16 +65,11 @@
         /// Specifies whether the EventListener being removed was registered as
         /// a capturing listener or not.
         /// </param>
-        public void RemoveEventListener(String type, DomEventHandler callback = null, Boolean capture = false)
+        public void RemoveEventListener(String type, DomEventHandler? callback = null, Boolean capture = false)
         {
             if (callback != null)
             {
-                _listeners?.Remove(new RegisteredEventListener
-                {
-                    Type = type,
-                    Callback = callback,
-                    IsCaptured = capture
-                });
+                _listeners?.Remove(new RegisteredEventListener(type, callback, capture));
             }
         }
 
@@ -118,7 +108,7 @@
 
                         if ((!listener.IsCaptured || phase != EventPhase.Bubbling) && (listener.IsCaptured || phase != EventPhase.Capturing))
                         {
-                            listener.Callback(target, ev);
+                            listener.Callback(target!, ev);
                         }
                     }
                 }
@@ -160,7 +150,7 @@
         /// </returns>
         public Boolean Dispatch(Event ev)
         {
-            if (ev == null || ((ev.Flags & EventFlags.Dispatch) == EventFlags.Dispatch) || ((ev.Flags & EventFlags.Initialized) != EventFlags.Initialized))
+            if (ev is null || ((ev.Flags & EventFlags.Dispatch) == EventFlags.Dispatch) || ((ev.Flags & EventFlags.Initialized) != EventFlags.Initialized))
                 throw new DomException(DomError.InvalidState);
 
             ev.IsTrusted = false;
@@ -171,11 +161,18 @@
 
         #region Event Listener Structure
 
-        private struct RegisteredEventListener
+        private readonly struct RegisteredEventListener
         {
-            public String Type;
-            public DomEventHandler Callback;
-            public Boolean IsCaptured;
+            public RegisteredEventListener(String type, DomEventHandler callback, Boolean isCaptured)
+            {
+                Type = type;
+                Callback = callback;
+                IsCaptured = isCaptured;
+            }
+
+            public readonly String Type;
+            public readonly DomEventHandler Callback;
+            public readonly Boolean IsCaptured;
         }
 
         #endregion

@@ -22,10 +22,10 @@ namespace AngleSharp.Dom
         /// </param>
         /// <param name="predicate">The filter function, if any.</param>
         /// <returns>The collection with the corresponding elements.</returns>
-        public static IEnumerable<T> GetNodes<T>(this INode parent, Boolean deep = true, Func<T, Boolean> predicate = null)
+        public static IEnumerable<T> GetNodes<T>(this INode parent, Boolean deep = true, Func<T, Boolean>? predicate = null)
             where T : class, INode
         {
-            predicate = predicate ?? (m => true);
+            predicate ??= (m => true);
             return deep ? parent.GetAllNodes(predicate) : parent.GetDescendendElements(predicate);
         }
 
@@ -35,7 +35,7 @@ namespace AngleSharp.Dom
         /// <param name="children">The nodelist to investigate.</param>
         /// <param name="id">The id to find.</param>
         /// <returns>The element or null.</returns>
-        public static IElement GetElementById(this INodeList children, String id)
+        public static IElement? GetElementById(this INodeList children, String id)
         {
             for (var i = 0; i < children.Length; i++)
             {
@@ -46,7 +46,7 @@ namespace AngleSharp.Dom
                         return element;
                     }
 
-                    element = element.ChildNodes.GetElementById(id);
+                    element = element.ChildNodes.GetElementById(id)!;
 
                     if (element != null)
                     {
@@ -89,23 +89,22 @@ namespace AngleSharp.Dom
         /// <returns>True if the node is accepted, otherwise false.</returns>
         public static Boolean Accepts(this FilterSettings filter, INode node)
         {
-            switch (node.NodeType)
+            return node.NodeType switch
             {
-                case NodeType.Attribute:             return (filter & FilterSettings.Attribute) == FilterSettings.Attribute;
-                case NodeType.CharacterData:         return (filter & FilterSettings.CharacterData) == FilterSettings.CharacterData;
-                case NodeType.Comment:               return (filter & FilterSettings.Comment) == FilterSettings.Comment;
-                case NodeType.Document:              return (filter & FilterSettings.Document) == FilterSettings.Document;
-                case NodeType.DocumentFragment:      return (filter & FilterSettings.DocumentFragment) == FilterSettings.DocumentFragment;
-                case NodeType.DocumentType:          return (filter & FilterSettings.DocumentType) == FilterSettings.DocumentType;
-                case NodeType.Element:               return (filter & FilterSettings.Element) == FilterSettings.Element;
-                case NodeType.Entity:                return (filter & FilterSettings.Entity) == FilterSettings.Entity;
-                case NodeType.EntityReference:       return (filter & FilterSettings.EntityReference) == FilterSettings.EntityReference;
-                case NodeType.ProcessingInstruction: return (filter & FilterSettings.ProcessingInstruction) == FilterSettings.ProcessingInstruction;
-                case NodeType.Notation:              return (filter & FilterSettings.Notation) == FilterSettings.Notation;
-                case NodeType.Text:                  return (filter & FilterSettings.Text) == FilterSettings.Text;
-            }
-
-            return filter == FilterSettings.All;
+                NodeType.Attribute              => (filter & FilterSettings.Attribute) == FilterSettings.Attribute,
+                NodeType.CharacterData          => (filter & FilterSettings.CharacterData) == FilterSettings.CharacterData,
+                NodeType.Comment                => (filter & FilterSettings.Comment) == FilterSettings.Comment,
+                NodeType.Document               => (filter & FilterSettings.Document) == FilterSettings.Document,
+                NodeType.DocumentFragment       => (filter & FilterSettings.DocumentFragment) == FilterSettings.DocumentFragment,
+                NodeType.DocumentType           => (filter & FilterSettings.DocumentType) == FilterSettings.DocumentType,
+                NodeType.Element                => (filter & FilterSettings.Element) == FilterSettings.Element,
+                NodeType.Entity                 => (filter & FilterSettings.Entity) == FilterSettings.Entity,
+                NodeType.EntityReference        => (filter & FilterSettings.EntityReference) == FilterSettings.EntityReference,
+                NodeType.ProcessingInstruction  => (filter & FilterSettings.ProcessingInstruction) == FilterSettings.ProcessingInstruction,
+                NodeType.Notation               => (filter & FilterSettings.Notation) == FilterSettings.Notation,
+                NodeType.Text                   => (filter & FilterSettings.Text) == FilterSettings.Text,
+                _                               => filter == FilterSettings.All
+            };
         }
 
         /// <summary>
@@ -116,7 +115,7 @@ namespace AngleSharp.Dom
         /// <param name="elements">The list of elements to filter.</param>
         /// <param name="id">The id of the element to find.</param>
         /// <returns>The element with the given id, or null.</returns>
-        public static T GetElementById<T>(this IEnumerable<T> elements, String id)
+        public static T? GetElementById<T>(this IEnumerable<T> elements, String id)
             where T : class, IElement
         {
             foreach (var element in elements)

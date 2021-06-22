@@ -1,9 +1,8 @@
-﻿namespace AngleSharp.Html.Dom
+namespace AngleSharp.Html.Dom
 {
     using AngleSharp.Dom;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     /// Represents an HTML slot element.
@@ -12,7 +11,7 @@
     {
         #region ctor
 
-        public HtmlSlotElement(Document owner, String prefix = null)
+        public HtmlSlotElement(Document owner, String? prefix = null)
             : base(owner, TagNames.Slot, prefix)
         {
         }
@@ -21,7 +20,7 @@
 
         #region Properties
 
-        public String Name
+        public String? Name
         {
             get => this.GetOwnAttribute(AttributeNames.Name);
             set => this.SetOwnAttribute(AttributeNames.Name, value);
@@ -57,24 +56,21 @@
                 return list;
             }
 
-            return Enumerable.Empty<INode>();
+            return Array.Empty<INode>();
         }
 
         #endregion
 
         #region Helpers
 
-        private static IElement GetAssignedSlot(INode node)
+        private static IElement? GetAssignedSlot(INode node)
         {
-            switch (node.NodeType)
+            return node.NodeType switch
             {
-                case NodeType.Text:
-                    return ((IText)node).AssignedSlot;
-                case NodeType.Element:
-                    return ((IElement)node).AssignedSlot;
-                default:
-                    return default(IElement);
-            }
+                NodeType.Text    => ((IText)node).AssignedSlot,
+                NodeType.Element => ((IElement)node).AssignedSlot,
+                _                => default(IElement)
+            };
         }
 
         #endregion

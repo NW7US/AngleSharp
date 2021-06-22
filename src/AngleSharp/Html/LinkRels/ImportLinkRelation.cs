@@ -12,7 +12,7 @@ namespace AngleSharp.Html.LinkRels
     {
         #region Fields
 
-        private static readonly ConditionalWeakTable<IDocument, ImportList> ImportLists = new ConditionalWeakTable<IDocument, ImportList>();
+        private static readonly ConditionalWeakTable<IDocument, ImportList> ImportLists = new ();
         private Boolean _async;
 
         #endregion
@@ -20,7 +20,7 @@ namespace AngleSharp.Html.LinkRels
         #region ctor
 
         public ImportLinkRelation(IHtmlLinkElement link)
-            : base(link, new DocumentRequestProcessor(link?.Owner.Context))
+            : base(link, new DocumentRequestProcessor(link?.Owner!.Context!))
         {
         }
 
@@ -28,7 +28,7 @@ namespace AngleSharp.Html.LinkRels
 
         #region Properties
 
-        public IDocument Import => (Processor as DocumentRequestProcessor)?.ChildDocument;
+        public IDocument? Import => (Processor as DocumentRequestProcessor)?.ChildDocument;
 
         public Boolean IsAsync => _async;
 
@@ -43,21 +43,17 @@ namespace AngleSharp.Html.LinkRels
         {
             var link = Link;
             var document = link.Owner;
-            var list = ImportLists.GetOrCreateValue(document);
+            var list = ImportLists.GetOrCreateValue(document!);
             var location = Url;
             var processor = Processor;
-            var item = new ImportEntry
-            {
-                Relation = this,
-                IsCycle = location != null && CheckCycle(document, location)
-            };
+            var item = new ImportEntry(this, isCycle: location != null && CheckCycle(document!, location));
             list.Add(item);
 
             if (location != null && !item.IsCycle)
             {
                 var request = link.CreateRequestFor(location);
                 _async = link.HasAttribute(AttributeNames.Async);
-                return processor?.ProcessAsync(request);
+                return processor?.ProcessAsync(request)!;
             }
 
             return Task.CompletedTask;
@@ -101,7 +97,7 @@ namespace AngleSharp.Html.LinkRels
             {
                 for (var i = 0; i < _list.Count; i++)
                 {
-                    Url relationUrl = _list[i].Relation.Url;
+                    Url relationUrl = _list[i].Relation.Url!;
                     if (relationUrl != null && relationUrl.Equals(location))
                     {
                         return true;
@@ -116,10 +112,16 @@ namespace AngleSharp.Html.LinkRels
             public void Remove(ImportEntry item) => _list.Remove(item);
         }
 
-        private struct ImportEntry
+        private readonly struct ImportEntry
         {
-            public ImportLinkRelation Relation;
-            public Boolean IsCycle;
+            public ImportEntry(ImportLinkRelation relation, Boolean isCycle)
+            {
+                Relation = relation;
+                IsCycle = isCycle;
+            }
+
+            public readonly ImportLinkRelation Relation;
+            public readonly Boolean IsCycle;
         }
 
         #endregion

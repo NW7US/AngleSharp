@@ -1,6 +1,5 @@
 namespace AngleSharp.Dom
 {
-    using AngleSharp.Common;
     using AngleSharp.Css.Parser;
     using AngleSharp.Dom.Events;
     using AngleSharp.Text;
@@ -16,25 +15,24 @@ namespace AngleSharp.Dom
 
         private readonly NamedNodeMap _attributes;
         private readonly String _namespace;
-        private readonly String _prefix;
+        private readonly String? _prefix;
         private readonly String _localName;
-
-        private HtmlCollection<IElement> _elements;
-        private TokenList _classList;
-        private IShadowRoot _shadowRoot;
+        private HtmlCollection<IElement>? _elements;
+        private TokenList? _classList;
+        private IShadowRoot? _shadowRoot;
 
         #endregion
 
         #region ctor
 
         /// <inheritdoc />
-        public Element(Document owner, String localName, String prefix, String namespaceUri, NodeFlags flags = NodeFlags.None)
-            : this(owner, prefix != null ? String.Concat(prefix, ":", localName) : localName, localName, prefix, namespaceUri, flags)
+        public Element(Document owner, String localName, String? prefix, String? namespaceUri, NodeFlags flags = NodeFlags.None)
+            : this(owner, prefix != null ? String.Concat(prefix, ":", localName) : localName, localName, prefix, namespaceUri!, flags)
         {
         }
 
         /// <inheritdoc />
-        public Element(Document owner, String name, String localName, String prefix, String namespaceUri, NodeFlags flags = NodeFlags.None)
+        public Element(Document owner, String name, String localName, String? prefix, String namespaceUri, NodeFlags flags = NodeFlags.None)
             : base(owner, name, NodeType.Element, flags)
         {
             _localName = localName;
@@ -47,7 +45,7 @@ namespace AngleSharp.Dom
 
         #region Internal Properties
 
-        internal IBrowsingContext Context => Owner?.Context;
+        internal IBrowsingContext Context => Owner?.Context!;
 
         internal NamedNodeMap Attributes => _attributes;
 
@@ -56,26 +54,26 @@ namespace AngleSharp.Dom
         #region Properties
 
         /// <inheritdoc />
-        public IElement AssignedSlot => ParentElement?.ShadowRoot?.GetAssignedSlot(Slot);
+        public IElement? AssignedSlot => ParentElement?.ShadowRoot?.GetAssignedSlot(Slot);
 
         /// <inheritdoc />
-        public String Slot
+        public String? Slot
         {
             get => this.GetOwnAttribute(AttributeNames.Slot);
             set => this.SetOwnAttribute(AttributeNames.Slot, value);
         }
 
         /// <inheritdoc />
-        public IShadowRoot ShadowRoot => _shadowRoot;
+        public IShadowRoot? ShadowRoot => _shadowRoot;
 
         /// <inheritdoc />
-        public String Prefix => _prefix;
+        public String? Prefix => _prefix;
 
         /// <inheritdoc />
         public String LocalName => _localName;
 
         /// <inheritdoc />
-        public String NamespaceUri => _namespace ?? this.GetNamespaceUri();
+        public String? NamespaceUri => _namespace ?? this.GetNamespaceUri();
 
         /// <inheritdoc />
         public override String TextContent
@@ -103,7 +101,7 @@ namespace AngleSharp.Dom
         {
             get
             {
-                if (_classList == null)
+                if (_classList is null)
                 {
                     _classList = new TokenList(this.GetOwnAttribute(AttributeNames.Class));
                     _classList.Changed += value => UpdateAttribute(AttributeNames.Class, value);
@@ -114,14 +112,14 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public String ClassName
+        public String? ClassName
         {
             get => this.GetOwnAttribute(AttributeNames.Class);
             set => this.SetOwnAttribute(AttributeNames.Class, value);
         }
 
         /// <inheritdoc />
-        public String Id
+        public String? Id
         {
             get => this.GetOwnAttribute(AttributeNames.Id);
             set => this.SetOwnAttribute(AttributeNames.Id, value);
@@ -131,10 +129,10 @@ namespace AngleSharp.Dom
         public String TagName => NodeName;
 
         /// <inheritdoc />
-        public ISourceReference SourceReference { get; set; }
+        public ISourceReference? SourceReference { get; set; }
 
         /// <inheritdoc />
-        public IElement PreviousElementSibling
+        public IElement? PreviousElementSibling
         {
             get
             {
@@ -150,9 +148,9 @@ namespace AngleSharp.Dom
                         {
                             found = true;
                         }
-                        else if (found && parent.ChildNodes[i] is IElement)
+                        else if (found && parent.ChildNodes[i] is IElement previousElementSibling)
                         {
-                            return (IElement)parent.ChildNodes[i];
+                            return previousElementSibling;
                         }
                     }
                 }
@@ -162,7 +160,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public IElement NextElementSibling
+        public IElement? NextElementSibling
         {
             get
             {
@@ -179,9 +177,9 @@ namespace AngleSharp.Dom
                         {
                             found = true;
                         }
-                        else if (found && parent.ChildNodes[i] is IElement)
+                        else if (found && parent.ChildNodes[i] is IElement childEl)
                         {
-                            return (IElement)parent.ChildNodes[i];
+                            return childEl;
                         }
                     }
                 }
@@ -212,10 +210,10 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public IHtmlCollection<IElement> Children => _elements ?? (_elements = new HtmlCollection<IElement>(this, deep: false));
+        public IHtmlCollection<IElement> Children => _elements ??= new HtmlCollection<IElement>(this, deep: false);
 
         /// <inheritdoc />
-        public IElement FirstElementChild
+        public IElement? FirstElementChild
         {
             get
             {
@@ -235,7 +233,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public IElement LastElementChild
+        public IElement? LastElementChild
         {
             get
             {
@@ -339,7 +337,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public IElement QuerySelector(String selectors) => ChildNodes.QuerySelector(selectors, this);
+        public IElement? QuerySelector(String selectors) => ChildNodes.QuerySelector(selectors, this);
 
         /// <inheritdoc />
         public IHtmlCollection<IElement> QuerySelectorAll(String selectors) => ChildNodes.QuerySelectorAll(selectors, this);
@@ -351,20 +349,20 @@ namespace AngleSharp.Dom
         public IHtmlCollection<IElement> GetElementsByTagName(String tagName) => ChildNodes.GetElementsByTagName(tagName);
 
         /// <inheritdoc />
-        public IHtmlCollection<IElement> GetElementsByTagNameNS(String namespaceURI, String tagName) => ChildNodes.GetElementsByTagName(namespaceURI, tagName);
+        public IHtmlCollection<IElement> GetElementsByTagNameNS(String? namespaceURI, String tagName) => ChildNodes.GetElementsByTagName(namespaceURI, tagName);
 
         /// <inheritdoc />
         public Boolean Matches(String selectorText)
         {
-            var parser = Context.GetService<ICssSelectorParser>();
+            var parser = Context.GetService<ICssSelectorParser>()!;
             var sg = parser.ParseSelector(selectorText) ?? throw new DomException(DomError.Syntax);
             return sg.Match(this, this);
         }
 
         /// <inheritdoc />
-        public IElement Closest(String selectorText)
+        public IElement? Closest(String selectorText)
         {
-            var parser = Context.GetService<ICssSelectorParser>();
+            var parser = Context.GetService<ICssSelectorParser>()!;
             var sg = parser.ParseSelector(selectorText) ?? throw new DomException(DomError.Syntax);
             var node = (IElement)this;
 
@@ -395,7 +393,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public Boolean HasAttribute(String namespaceUri, String localName)
+        public Boolean HasAttribute(String? namespaceUri, String localName)
         {
             if (String.IsNullOrEmpty(namespaceUri))
             {
@@ -406,7 +404,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public String GetAttribute(String name)
+        public String? GetAttribute(String name)
         {
             if (_namespace.Is(NamespaceNames.HtmlUri))
             {
@@ -417,7 +415,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public String GetAttribute(String namespaceUri, String localName)
+        public String? GetAttribute(String? namespaceUri, String localName)
         {
             if (String.IsNullOrEmpty(namespaceUri))
             {
@@ -449,7 +447,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public void SetAttribute(String namespaceUri, String name, String value)
+        public void SetAttribute(String? namespaceUri, String name, String value)
         {
             if (value != null)
             {
@@ -468,6 +466,7 @@ namespace AngleSharp.Dom
         /// <param name="attr">The attribute to add.</param>
         public void AddAttribute(Attr attr)
         {
+            attr.Container = _attributes;
             _attributes.FastAddItem(attr);
         }
 
@@ -483,7 +482,7 @@ namespace AngleSharp.Dom
         }
 
         /// <inheritdoc />
-        public Boolean RemoveAttribute(String namespaceUri, String localName)
+        public Boolean RemoveAttribute(String? namespaceUri, String localName)
         {
             if (String.IsNullOrEmpty(namespaceUri))
             {
@@ -540,11 +539,11 @@ namespace AngleSharp.Dom
             switch (position)
             {
                 case AdjacentPosition.BeforeBegin:
-                    Parent.InsertBefore(nodes, this);
+                    Parent!.InsertBefore(nodes, this);
                     break;
 
                 case AdjacentPosition.AfterEnd:
-                    Parent.InsertChild(Parent.IndexOf(this) + 1, nodes);
+                    Parent!.InsertChild(Parent.IndexOf(this) + 1, nodes);
                     break;
 
                 case AdjacentPosition.AfterBegin:
@@ -590,9 +589,9 @@ namespace AngleSharp.Dom
             }
         }
 
-        internal void AttributeChanged(String localName, String namespaceUri, String oldValue, String newValue)
+        internal void AttributeChanged(String localName, String? namespaceUri, String? oldValue, String? newValue)
         {
-            if (namespaceUri == null)
+            if (namespaceUri is null)
             {
                 var observers = Context.GetServices<IAttributeObserver>();
 
@@ -619,10 +618,10 @@ namespace AngleSharp.Dom
         protected void UpdateAttribute(String name, String value) => this.SetOwnAttribute(name, value, suppressCallbacks: true);
 
         /// <inheritdoc />
-        protected sealed override String LocateNamespace(String prefix) => this.LocateNamespaceFor(prefix);
+        protected sealed override String? LocateNamespace(String prefix) => this.LocateNamespaceFor(prefix);
 
         /// <inheritdoc />
-        protected sealed override String LocatePrefix(String namespaceUri) => this.LocatePrefixFor(namespaceUri);
+        protected sealed override String? LocatePrefix(String namespaceUri) => this.LocatePrefixFor(namespaceUri);
 
         /// <inheritdoc />
         protected void CloneElement(Element element, Document owner, Boolean deep)
@@ -632,6 +631,7 @@ namespace AngleSharp.Dom
             foreach (var attribute in _attributes)
             {
                 var attr = new Attr(attribute.Prefix, attribute.LocalName, attribute.Value, attribute.NamespaceUri);
+                attr.Container = element._attributes;
                 element._attributes.FastAddItem(attr);
             }
 

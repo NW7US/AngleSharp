@@ -2,6 +2,7 @@ namespace AngleSharp
 {
     using AngleSharp.Browser;
     using AngleSharp.Common;
+    using AngleSharp.Dom;
     using AngleSharp.Io;
     using System;
     using System.Collections.Generic;
@@ -38,7 +39,7 @@ namespace AngleSharp
         /// <returns>The new instance with only the given service.</returns>
         public static IConfiguration WithOnly<TService>(this IConfiguration configuration, TService service)
         {
-            if (service == null)
+            if (service is null)
             {
                 throw new ArgumentNullException(nameof(service));
             }
@@ -149,7 +150,7 @@ namespace AngleSharp
         /// <param name="configuration">The configuration to extend.</param>
         /// <param name="setup">Configuration for the loader service.</param>
         /// <returns>The new configuration with the service.</returns>
-        public static IConfiguration WithDefaultLoader(this IConfiguration configuration, LoaderOptions setup = null)
+        public static IConfiguration WithDefaultLoader(this IConfiguration configuration, LoaderOptions? setup = null)
         {
             var config = setup ?? new LoaderOptions();
 
@@ -210,7 +211,7 @@ namespace AngleSharp
         /// <param name="configuration">The configuration to extend.</param>
         /// <param name="shouldRefresh">The optional callback.</param>
         /// <returns>The new instance with the service.</returns>
-        public static IConfiguration WithMetaRefresh(this IConfiguration configuration, Predicate<Url> shouldRefresh = null)
+        public static IConfiguration WithMetaRefresh(this IConfiguration configuration, Predicate<Url>? shouldRefresh = null)
         {
             var service = new RefreshMetaHandler(shouldRefresh);
             return configuration.With(service);

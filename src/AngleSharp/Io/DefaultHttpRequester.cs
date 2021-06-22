@@ -1,10 +1,11 @@
 namespace AngleSharp.Io
 {
     using AngleSharp.Common;
+    using AngleSharp.Dom;
     using AngleSharp.Text;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
     using System.Linq;
@@ -24,8 +25,6 @@ namespace AngleSharp.Io
 
         private static readonly String Version = typeof(DefaultHttpRequester).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
         private static readonly String AgentName = "AngleSharp/" + Version;
-        private static readonly Dictionary<String, PropertyInfo> PropCache = new Dictionary<String, PropertyInfo>();
-        private static readonly List<String> Restricted = new List<String>();
 
         #endregion
 
@@ -45,7 +44,7 @@ namespace AngleSharp.Io
         /// </summary>
         /// <param name="userAgent">The user-agent name to use, if any.</param>
         /// <param name="setup">An optional setup function for the HttpWebRequest object.</param>
-        public DefaultHttpRequester(String userAgent = null, Action<HttpWebRequest> setup = null)
+        public DefaultHttpRequester(String? userAgent = null, Action<HttpWebRequest>? setup = null)
         {
             _timeOut = new TimeSpan(0, 0, 0, 45);
             _setup = setup ?? ((HttpWebRequest r) => { });
@@ -117,7 +116,7 @@ namespace AngleSharp.Io
 
         private sealed class RequestState
         {
-            private static MethodInfo _serverString;
+            private static MethodInfo? _serverString;
             private readonly CookieContainer _cookies;
             private readonly IDictionary<String, String> _headers;
             private readonly HttpWebRequest _http;
@@ -129,7 +128,7 @@ namespace AngleSharp.Io
                 _cookies = new CookieContainer();
                 _headers = headers;
                 _request = request;
-                _http = WebRequest.Create(request.Address) as HttpWebRequest;
+                _http = (HttpWebRequest)WebRequest.Create(request.Address);
                 _http.CookieContainer = _cookies;
                 _http.Method = request.Method.ToString().ToUpperInvariant();
                 _buffer = new Byte[BufferSize];
@@ -146,7 +145,7 @@ namespace AngleSharp.Io
 
                 if (_request.Method == HttpMethod.Post || _request.Method == HttpMethod.Put)
                 {
-                    var target = await Task.Factory.FromAsync<Stream>(_http.BeginGetRequestStream, _http.EndGetRequestStream, null).ConfigureAwait(false);
+                    var target = await _http.GetRequestStreamAsync().ConfigureAwait(false);
                     SendRequest(target);
                 }
 
@@ -154,7 +153,7 @@ namespace AngleSharp.Io
 
                 try
                 {
-                    response = await Task.Factory.FromAsync<WebResponse>(_http.BeginGetResponse, _http.EndGetResponse, null).ConfigureAwait(false);
+                    response = await _http.GetResponseAsync().ConfigureAwait(false);
                 }
                 catch (WebException ex)
                 {
@@ -162,7 +161,7 @@ namespace AngleSharp.Io
                 }
 
                 RaiseConnectionLimit(_http);
-                return GetResponse(response as HttpWebResponse);
+                return GetResponse((HttpWebResponse)response);
             }
 
             private void SendRequest(Stream target)
@@ -182,11 +181,12 @@ namespace AngleSharp.Io
                 }
             }
 
-            private DefaultResponse GetResponse(HttpWebResponse response)
+            [return: NotNullIfNotNull("response")]
+            private DefaultResponse? GetResponse(HttpWebResponse response)
             {
                 if (response != null)
                 {
-                    var originalCookies = _cookies.GetCookies(_request.Address);
+                    var originalCookies = _cookies.GetCookies(_request.Address!);
                     var newCookies = _cookies.GetCookies(response.ResponseUri);
                     var cookies = newCookies.OfType<Cookie>().Except(originalCookies.OfType<Cookie>()).ToArray();
                     var headers = response.Headers.AllKeys.Select(m => new { Key = m, Value = response.Headers[m] });
@@ -221,11 +221,11 @@ namespace AngleSharp.Io
             /// </summary>
             private static String Stringify(Cookie cookie)
             {
-                if (_serverString == null)
+                if (_serverString is null)
                 {
                     var methods = typeof(Cookie).GetMethods();
-                    var func = methods.FirstOrDefault(m => m.Name.Equals("ToServerString"));
-                    _serverString = func ?? methods.FirstOrDefault(m => m.Name.Equals("ToString"));
+                    var func = methods.FirstOrDefault(m => m.Name is "ToServerString");
+                    _serverString = func ?? methods.FirstOrDefault(m => m.Name is "ToString");
                 }
 
                 return _serverString.Invoke(cookie, null).ToString();
@@ -248,27 +248,27 @@ namespace AngleSharp.Io
                 }
                 else if (key.Is(HeaderNames.Expect))
                 {
-                    SetProperty(HeaderNames.Expect, value);
+                    _http.Expect = value;
                 }
                 else if (key.Is(HeaderNames.Date))
                 {
-                    SetProperty(HeaderNames.Date, DateTime.Parse(value, CultureInfo.InvariantCulture));
+                    _http.Date = DateTime.Parse(value, CultureInfo.InvariantCulture);
                 }
                 else if (key.Is(HeaderNames.Host))
                 {
-                    SetProperty(HeaderNames.Host, value);
+                    _http.Host = value;
                 }
                 else if (key.Is(HeaderNames.IfModifiedSince))
                 {
-                    SetProperty("IfModifiedSince", DateTime.Parse(value, CultureInfo.InvariantCulture));
+                    _http.IfModifiedSince = DateTime.Parse(value, CultureInfo.InvariantCulture);
                 }
                 else if (key.Is(HeaderNames.Referer))
                 {
-                    SetProperty(HeaderNames.Referer, value);
+                    _http.Referer = value;
                 }
                 else if (key.Is(HeaderNames.UserAgent))
                 {
-                    SetProperty("UserAgent", value);
+                    _http.UserAgent = value;
                 }
                 else if (!key.Is(HeaderNames.Connection) && !key.Is(HeaderNames.Range) && !key.Is(HeaderNames.ContentLength) && !key.Is(HeaderNames.TransferEncoding))
                 {
@@ -300,73 +300,18 @@ namespace AngleSharp.Io
 
             private void AllowCompression()
             {
-                SetProperty("AutomaticDecompression", 3);
+                _http.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             }
 
             private void DisableAutoRedirect()
             {
-                SetProperty("AllowAutoRedirect", false);
+                _http.AllowAutoRedirect = false;
             }
-
-            /// <summary>
-            /// Sets properties of the special headers (described here
-            /// http://msdn.microsoft.com/en-us/library/system.net.httpwebrequest.headers.aspx)
-            /// which are not accessible (in general) in this profile
-            /// (profile78). However, usually they are here and can be modified
-            /// with reflection. If not they are not set.
-            /// </summary>
-            /// <param name="name">The name of the property.</param>
-            /// <param name="value">
-            /// The value of the property, which will be set.
-            /// </param>
-            private void SetProperty(String name, Object value)
-            {
-                if (!PropCache.TryGetValue(name, out var property))
-                {
-                    lock (PropCache)
-                    {
-                        if (!PropCache.TryGetValue(name, out property))
-                        {
-                            property = _http.GetType().GetProperty(name);
-                            PropCache.Add(name, property);
-                        }
-                    }
-                }
-
-                if (!Restricted.Contains(name) && property != null && property.CanWrite)
-                {
-                    try
-                    {
-                        //This might fail on certain platforms
-                        property.SetValue(_http, value, null);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine("Exception while setting value on the HTTP requester: {0}", ex);
-
-                        //Catch any failure and do not try again on the same platform
-                        lock (Restricted)
-                        {
-                            if (!Restricted.Contains(name))
-                            {
-                                Restricted.Add(name);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        }   
 
         private static void RaiseConnectionLimit(HttpWebRequest http)
         {
-            var field = typeof(HttpWebRequest).GetField("_ServicePoint");
-            var servicePoint = field?.GetValue(http);
-
-            if (servicePoint != null)
-            {
-                var connectionLimit = servicePoint.GetType().GetProperty("ConnectionLimit");
-                connectionLimit?.SetValue(servicePoint, 1024, null);
-            }
+            http.ServicePoint.ConnectionLimit = 1024;
         }
 
         #endregion

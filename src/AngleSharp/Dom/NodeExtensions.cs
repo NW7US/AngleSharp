@@ -4,6 +4,7 @@ namespace AngleSharp.Dom
     using AngleSharp.Text;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
 
     /// <summary>
@@ -19,7 +20,7 @@ namespace AngleSharp.Dom
         /// <returns>The root node.</returns>
         public static INode GetRoot(this INode node)
         {
-            while (node.Parent != null)
+            while (node.Parent is not null)
             {
                 node = node.Parent;
             }
@@ -62,7 +63,8 @@ namespace AngleSharp.Dom
         /// <param name="node">The node that spawns the hyper reference.</param>
         /// <param name="url">The given URL.</param>
         /// <returns>The absolute URL.</returns>
-        public static Url HyperReference(this INode node, String url) => url == null ? null : new Url(node.BaseUrl, url);
+        [return: NotNullIfNotNull("url")]
+        public static Url? HyperReference(this INode node, String url) => url is null ? null : new Url(node.BaseUrl!, url);
 
         /// <summary>
         /// Checks if the node is an descendant of the given parent.
@@ -74,7 +76,7 @@ namespace AngleSharp.Dom
         /// </returns>
         public static Boolean IsDescendantOf(this INode node, INode parent)
         {
-            while (node.Parent != null)
+            while (node.Parent is not null)
             {
                 if (Object.ReferenceEquals(node.Parent, parent))
                 {
@@ -110,6 +112,7 @@ namespace AngleSharp.Dom
                 yield return next;
 
                 var length = next.ChildNodes.Length;
+
                 while (length > 0)
                 {
                     stack.Push(next.ChildNodes[--length]);
@@ -145,7 +148,7 @@ namespace AngleSharp.Dom
         /// <returns>An iterator over all ancestors.</returns>
         public static IEnumerable<INode> GetAncestors(this INode node)
         {
-            while ((node = node.Parent) != null)
+            while ((node = node!.Parent!) is not null)
             {
                 yield return node;
             }
@@ -165,7 +168,7 @@ namespace AngleSharp.Dom
             {
                 yield return node;
             }
-            while ((node = node.Parent) != null);
+            while ((node = node!.Parent!) is not null);
         }
 
         /// <summary>
@@ -184,18 +187,18 @@ namespace AngleSharp.Dom
         /// </summary>
         /// <param name="node">The child of the potential ancestor.</param>
         /// <returns>The specified ancestor or its default value.</returns>
-        public static T GetAncestor<T>(this INode node)
+        public static T? GetAncestor<T>(this INode node)
             where T : INode
         {
-            while ((node = node.Parent) != null)
+            while ((node = node!.Parent!) is not null)
             {
-                if (node is T)
+                if (node is T t)
                 {
-                    return (T)node;
+                    return t;
                 }
             }
 
-            return default(T);
+            return default;
         }
 
         /// <summary>
@@ -226,7 +229,7 @@ namespace AngleSharp.Dom
         /// <returns>
         /// The index of the node or -1 if the node is not a child of a parent.
         /// </returns>
-        public static Int32 Index(this INode node) => node.Parent.IndexOf(node);
+        public static Int32 Index(this INode node) => node.Parent!.IndexOf(node);
 
         /// <summary>
         /// Finds the index of the given node of the provided parent node.
@@ -240,7 +243,7 @@ namespace AngleSharp.Dom
         {
             var i = 0;
 
-            if (parent != null)
+            if (parent is not null)
             {
                 foreach (var child in parent.ChildNodes)
                 {
@@ -318,7 +321,7 @@ namespace AngleSharp.Dom
         /// </summary>
         /// <param name="node">The node that probably has an host object</param>
         /// <returns>The host object or null.</returns>
-        public static INode GetAssociatedHost(this INode node)
+        public static INode? GetAssociatedHost(this INode node)
         {
             if (node is IDocumentFragment)
             {
@@ -344,7 +347,7 @@ namespace AngleSharp.Dom
             {
                 var host = node.GetRoot().GetAssociatedHost();
 
-                if (host != null)
+                if (host is not null)
                 {
                     return parent.IsInclusiveAncestorOf(host);
                 }
@@ -362,16 +365,22 @@ namespace AngleSharp.Dom
         /// <param name="parent">The origin that will be mutated.</param>
         /// <param name="node">The node to be inserted.</param>
         /// <param name="child">The reference node of the insertation.</param>
-        public static void EnsurePreInsertionValidity(this INode parent, INode node, INode child)
+        public static void EnsurePreInsertionValidity(this INode parent, INode node, INode? child)
         {
             if (parent.IsEndPoint() || node.IsHostIncludingInclusiveAncestor(parent))
+            {
                 throw new DomException(DomError.HierarchyRequest);
+            }
 
-            if (child != null && child.Parent != parent)
+            if (child is not null && child.Parent != parent)
+            {
                 throw new DomException(DomError.NotFound);
+            }
 
             if (node is IElement == false && node is ICharacterData == false && node is IDocumentType == false && node is IDocumentFragment == false)
+            {
                 throw new DomException(DomError.HierarchyRequest);
+            }
 
             if (parent is IDocument document)
             {
@@ -380,14 +389,14 @@ namespace AngleSharp.Dom
                 switch (node.NodeType)
                 {
                     case NodeType.Element:
-                        forbidden = document.DocumentElement != null || child is IDocumentType || child.IsFollowedByDoctype();
+                        forbidden = document.DocumentElement is not null || child is IDocumentType || child.IsFollowedByDoctype();
                         break;
                     case NodeType.DocumentFragment:
                         var elements = node.GetElementCount();
-                        forbidden = elements > 1 || node.HasTextNodes() || (elements == 1 && document.DocumentElement != null) || child is IDocumentType || child.IsFollowedByDoctype();
+                        forbidden = elements > 1 || node.HasTextNodes() || (elements == 1 && document.DocumentElement is not null) || child is IDocumentType || child.IsFollowedByDoctype();
                         break;
                     case NodeType.DocumentType:
-                        forbidden = document.Doctype != null || (child != null && child.IsPrecededByElement()) || (child == null && document.DocumentElement != null);
+                        forbidden = document.Doctype is not null || (child is not null && child.IsPrecededByElement()) || (child is null && document.DocumentElement is not null);
                         break;
                     case NodeType.Text:
                         forbidden = true;
@@ -395,7 +404,9 @@ namespace AngleSharp.Dom
                 }
 
                 if (forbidden)
+                {
                     throw new DomException(DomError.HierarchyRequest);
+                }
             }
             else if (node is IDocumentType)
             {
@@ -410,9 +421,9 @@ namespace AngleSharp.Dom
         /// <param name="node">The node to be inserted.</param>
         /// <param name="child">The reference node of the insertation.</param>
         /// <returns>The inserted node, which is node.</returns>
-        public static INode PreInsert(this INode parent, INode node, INode child)
+        public static INode PreInsert(this INode parent, INode node, INode? child)
         {
-            var newNode = node as Node;
+            var newNode = (Node)node;
 
             if (parent is Node parentNode)
             {
@@ -425,7 +436,7 @@ namespace AngleSharp.Dom
                 }
 
                 var document = parent.Owner ?? parent as IDocument;
-                document.AdoptNode(node);
+                document!.AdoptNode(node);
                 parentNode.InsertBefore(newNode, referenceChild, false);
                 return node;
             }
@@ -443,10 +454,12 @@ namespace AngleSharp.Dom
         {
             if (parent is Node parentNode)
             {
-                if (child == null || child.Parent != parent)
+                if (child is null || child.Parent != parent)
+                {
                     throw new DomException(DomError.NotFound);
+                }
 
-                parentNode.RemoveChild(child as Node, false);
+                parentNode.RemoveChild((Node)child, false);
                 return child;
             }
 
@@ -469,13 +482,13 @@ namespace AngleSharp.Dom
         /// <returns>
         /// True if a doctype node is following the child, otherwise false.
         /// </returns>
-        public static Boolean IsFollowedByDoctype(this INode child)
+        public static Boolean IsFollowedByDoctype(this INode? child)
         {
-            if (child != null)
+            if (child is not null)
             {
                 var before = true;
 
-                foreach (var node in child.Parent.ChildNodes)
+                foreach (var node in child.Parent!.ChildNodes)
                 {
                     if (before)
                     {
@@ -500,7 +513,7 @@ namespace AngleSharp.Dom
         /// </returns>
         public static Boolean IsPrecededByElement(this INode child)
         {
-            foreach (var node in child.Parent.ChildNodes)
+            foreach (var node in child.Parent!.ChildNodes)
             {
                 if (node == child)
                 {
@@ -541,10 +554,10 @@ namespace AngleSharp.Dom
         /// <typeparam name="TNode">The node type to find.</typeparam>
         /// <param name="parent">The parent that contains the elements.</param>
         /// <returns>The instance or null.</returns>
-        public static TNode FindChild<TNode>(this INode parent)
+        public static TNode? FindChild<TNode>(this INode parent)
             where TNode : class, INode
         {
-            if (parent != null)
+            if (parent is not null)
             {
                 for (var i = 0; i < parent.ChildNodes.Length; i++)
                 {
@@ -564,18 +577,19 @@ namespace AngleSharp.Dom
         /// </summary>
         /// <typeparam name="TNode">The node type to find.</typeparam>
         /// <param name="parent">The parent that contains the elements.</param>
+        /// <param name="maxDepth">The maximum depth to allow for searching. A value of 0 is equivalent to FindChild.</param>
         /// <returns>The instance or null.</returns>
-        public static TNode FindDescendant<TNode>(this INode parent)
+        public static TNode? FindDescendant<TNode>(this INode parent, Int32 maxDepth = 1024)
             where TNode : class, INode
         {
-            if (parent != null)
+            if (parent is not null && maxDepth > -1)
             {
                 for (var i = 0; i < parent.ChildNodes.Length; i++)
                 {
                     var node = parent.ChildNodes[i];
-                    var child = node as TNode ?? node.FindDescendant<TNode>();
+                    var child = node as TNode ?? node.FindDescendant<TNode>(maxDepth - 1);
 
-                    if (child != null)
+                    if (child is not null)
                     {
                         return child;
                     }
@@ -591,7 +605,7 @@ namespace AngleSharp.Dom
         /// <param name="root">The shadow tree hosting the slots.</param>
         /// <param name="name">The name of the slot to target.</param>
         /// <returns>The slot or default slot, if any.</returns>
-        public static IElement GetAssignedSlot(this IShadowRoot root, String name) => root.GetDescendants().OfType<IHtmlSlotElement>().FirstOrDefault(m => m.Name.Is(name));
+        public static IElement? GetAssignedSlot(this IShadowRoot root, String? name) => root.GetDescendants().OfType<IHtmlSlotElement>().FirstOrDefault(m => m.Name.Is(name));
 
         /// <summary>
         /// Gets the content text of the given DOM node.
@@ -600,8 +614,10 @@ namespace AngleSharp.Dom
         /// <returns>The text of the node and its children.</returns>
         public static String Text(this INode node)
         {
-            if (node == null)
+            if (node is null)
+            {
                 throw new ArgumentNullException(nameof(node));
+            }
 
             return node.TextContent;
         }
@@ -616,8 +632,10 @@ namespace AngleSharp.Dom
         public static T Text<T>(this T nodes, String text)
             where T : IEnumerable<INode>
         {
-            if (nodes == null)
+            if (nodes is null)
+            {
                 throw new ArgumentNullException(nameof(nodes));
+            }
 
             foreach (var element in nodes)
             {
@@ -635,10 +653,12 @@ namespace AngleSharp.Dom
         /// <returns>The index of the item or -1 if not found.</returns>
         public static Int32 Index(this IEnumerable<INode> nodes, INode item)
         {
-            if (nodes == null)
+            if (nodes is null)
+            {
                 throw new ArgumentNullException(nameof(nodes));
+            }
 
-            if (item != null)
+            if (item is not null)
             {
                 var i = 0;
 

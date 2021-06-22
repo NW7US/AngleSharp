@@ -12,7 +12,7 @@
 
 AngleSharp is a .NET library that gives you the ability to parse angle bracket based hyper-texts like HTML, SVG, and MathML. XML without validation is also supported by the library. An important aspect of AngleSharp is that CSS can also be parsed. The included parser is built upon the official W3C specification. This produces a perfectly portable HTML5 DOM representation of the given source code and ensures compatibility with results in evergreen browsers. Also standard DOM features such as `querySelector` or `querySelectorAll` work for tree traversal.
 
-:zap::zap: **Migrating from AngleSharp 0.9 to AngleSharp 0.10 or later**? Look at our [migration documentation](doc/Migration.md). :zap::zap:
+:zap::zap: **Migrating from AngleSharp 0.9 to AngleSharp 0.10 or later**? Look at our [migration documentation](docs/tutorials/05-Migration.md). :zap::zap:
 
 ## Key Features
 
@@ -68,7 +68,7 @@ AngleSharp has been created as a .NET Standard 2.0 compatible library. This incl
 
 ## Documentation
 
-The documentation of AngleSharp is located [in the docs folder](doc/index.md). More examples, best-practices, and general information can be found there. The documentation also contains a list of [frequently asked questions](doc/Questions.md).
+The documentation of AngleSharp is located [in the docs folder](docs/README.md). More examples, best-practices, and general information can be found there. The documentation also contains a list of [frequently asked questions](docs/tutorials/06-Questions.md).
 
 More information is also available by following some of the hyper references mentioned in the Wiki. In-depth articles will be published on the CodeProject, with links being placed in the Wiki at GitHub.
 
@@ -127,7 +127,7 @@ Therefore we created a backing model via [Bountysource](https://salt.bountysourc
 
 ## Development
 
-AngleSharp is written in C# 7.1 and thus requires Roslyn as a compiler. Using an IDE like Visual Studio 2017+ is recommended on Windows. Alternatively, VSCode (with OmniSharp or another suitable Language Server Protocol implementation) should be the tool of choice on other platforms.
+AngleSharp is written in C# 9 and thus requires Roslyn as a compiler. Using an IDE like Visual Studio 2019+ is recommended on Windows. Alternatively, VSCode (with OmniSharp or another suitable Language Server Protocol implementation) should be the tool of choice on other platforms.
 
 The code tries to be as clean as possible. Notably the following rules are used:
 
@@ -139,7 +139,7 @@ More important, however, is the proper usage of tests. Any new feature should co
 
 ## Changelog
 
-A very detailed [changelog](CHANGELOG.md) exists. If you are just interested in major releases then have a look at [our own releases document](doc/Releases.md).
+A very detailed [changelog](CHANGELOG.md) exists. If you are just interested in major releases then have a look at [the GitHub releases](https://github.com/AngleSharp/AngleSharp/releases).
 
 ## .NET Foundation
 
@@ -149,7 +149,7 @@ This project is supported by the [.NET Foundation](https://dotnetfoundation.org)
 
 The MIT License (MIT)
 
-Copyright (c) 2013 - 2020 AngleSharp
+Copyright (c) 2013 - 2021 AngleSharp
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

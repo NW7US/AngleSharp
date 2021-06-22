@@ -1,3 +1,5 @@
+#nullable disable
+
 namespace AngleSharp.Html.Forms.Submitters.Json
 {
     using AngleSharp.Text;
@@ -106,7 +108,7 @@ namespace AngleSharp.Html.Forms.Submitters.Json
 
         public JsonElement Run(JsonElement context, JsonElement value, Boolean file = false)
         {
-            if (Next == null)
+            if (Next is null)
             {
                 return JsonEncodeLastValue(context, value, file);
             }
@@ -120,7 +122,7 @@ namespace AngleSharp.Html.Forms.Submitters.Json
         {
             var currentValue = GetValue(context);
 
-            if (currentValue == null)
+            if (currentValue is null)
             {
                 var newValue = Next.CreateElement();
                 return SetValue(context, newValue);
@@ -145,20 +147,20 @@ namespace AngleSharp.Html.Forms.Submitters.Json
             var currentValue = GetValue(context);
 
             //undefined
-            if (currentValue == null)
+            if (currentValue is null)
             {
                 if (Append)
                 {
-                    var arr = new JsonArray();
-                    arr.Push(value);
+                    var arr = new JsonArray(1) { value };
+
                     value = arr;
                 }
 
                 SetValue(context, value);
             }
-            else if (currentValue is JsonArray)
+            else if (currentValue is JsonArray jsonArray)
             {
-                ((JsonArray)currentValue).Push(value);
+                jsonArray.Push(value);
             }
             else if (currentValue is JsonObject && !file)
             {
@@ -167,9 +169,8 @@ namespace AngleSharp.Html.Forms.Submitters.Json
             }
             else
             {
-                var arr = new JsonArray();
-                arr.Push(currentValue);
-                arr.Push(value);
+                var arr = new JsonArray(2) { currentValue, value };
+
                 SetValue(context, arr);
             }
 
@@ -183,7 +184,7 @@ namespace AngleSharp.Html.Forms.Submitters.Json
                 Key = key;
             }
 
-            public String Key { get; private set; }
+            public String Key { get; }
 
             protected override JsonElement GetValue(JsonElement context) => context[Key];
 
@@ -220,7 +221,7 @@ namespace AngleSharp.Html.Forms.Submitters.Json
                 Key = key;
             }
 
-            public Int32 Key { get; private set; }
+            public Int32 Key { get; }
 
             protected override JsonElement GetValue(JsonElement context)
             {

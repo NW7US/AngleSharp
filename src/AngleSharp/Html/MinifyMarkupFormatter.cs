@@ -26,7 +26,7 @@ namespace AngleSharp.Html
         /// </summary>
         public IEnumerable<String> PreservedTags
         {
-            get => _preservedTags ?? Enumerable.Empty<String>();
+            get => _preservedTags ?? Array.Empty<String>();
             set => _preservedTags = value;
         }
 
@@ -105,6 +105,8 @@ namespace AngleSharp.Html
                     {
                         return sb.ToPool();
                     }
+
+                    sb.ReturnToPool();
 
                     return String.Empty;
                 }
@@ -219,7 +221,7 @@ namespace AngleSharp.Html
         private Boolean CanBeSkipped(IElement element) =>
             !ShouldKeepImpliedEndTag &&
             element.Flags.HasFlag(NodeFlags.ImpliedEnd) && (
-                element.NextElementSibling == null ||
+                element.NextElementSibling is null ||
                 element.NextElementSibling.LocalName == element.LocalName);
 
         private static Boolean ShouldOutput(ICharacterData text) =>

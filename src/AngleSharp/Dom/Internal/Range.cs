@@ -1,9 +1,10 @@
-﻿namespace AngleSharp.Dom
+namespace AngleSharp.Dom
 {
     using AngleSharp.Text;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text;
 
     /// <summary>
     /// A DOM range to gather DOM tree information.
@@ -21,8 +22,8 @@
 
         public Range(IDocument document)
         {
-            _start = new Boundary { Offset = 0, Node = document };
-            _end = new Boundary { Offset = 0, Node = document };
+            _start = new Boundary(document, 0);
+            _end = new Boundary(document, 0);
         }
 
         private Range(Boundary start, Boundary end)
@@ -60,7 +61,7 @@
                     container = container.Parent;
                 }
 
-                return container;
+                return container!;
             }
         }
 
@@ -70,7 +71,7 @@
 
         public void StartWith(INode refNode, Int32 offset)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             if (refNode.NodeType == NodeType.DocumentType)
@@ -79,7 +80,7 @@
             if (offset > refNode.ChildNodes.Length)
                 throw new DomException(DomError.IndexSizeError);
 
-            var bp = new Boundary { Node = refNode, Offset = offset };
+            var bp = new Boundary(refNode, offset);
 
             if (bp > _end || Root != refNode.GetRoot())
             {
@@ -89,7 +90,7 @@
 
         public void EndWith(INode refNode, Int32 offset)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             if (refNode.NodeType == NodeType.DocumentType)
@@ -98,7 +99,7 @@
             if (offset > refNode.ChildNodes.Length)
                 throw new DomException(DomError.IndexSizeError);
 
-            var bp = new Boundary { Node = refNode, Offset = offset };
+            var bp = new Boundary(refNode, offset);
 
             if (bp < _start || Root != refNode.GetRoot())
             {
@@ -108,54 +109,54 @@
 
         public void StartBefore(INode refNode)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             var parent = refNode.Parent;
 
-            if (parent == null)
+            if (parent is null)
                 throw new DomException(DomError.InvalidNodeType);
 
-            _start = new Boundary { Node = parent, Offset = parent.ChildNodes.Index(refNode) };
+            _start = new Boundary(parent, parent.ChildNodes.Index(refNode));
         }
 
         public void EndBefore(INode refNode)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             var parent = refNode.Parent;
 
-            if (parent == null)
+            if (parent is null)
                 throw new DomException(DomError.InvalidNodeType);
 
-            _end = new Boundary { Node = parent, Offset = parent.ChildNodes.Index(refNode) };
+            _end = new Boundary(parent, parent.ChildNodes.Index(refNode));
         }
 
         public void StartAfter(INode refNode)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             var parent = refNode.Parent;
 
-            if (parent == null)
+            if (parent is null)
                 throw new DomException(DomError.InvalidNodeType);
 
-            _start = new Boundary { Node = parent, Offset = parent.ChildNodes.Index(refNode) + 1 };
+            _start = new Boundary(parent, parent.ChildNodes.Index(refNode) + 1);
         }
 
         public void EndAfter(INode refNode)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             var parent = refNode.Parent;
 
-            if (parent == null)
+            if (parent is null)
                 throw new DomException(DomError.InvalidNodeType);
 
-            _end = new Boundary { Node = parent, Offset = parent.ChildNodes.Index(refNode) + 1 };
+            _end = new Boundary(parent, parent.ChildNodes.Index(refNode) + 1);
         }
 
         public void Collapse(Boolean toStart)
@@ -172,30 +173,30 @@
 
         public void Select(INode refNode)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             var parent = refNode.Parent;
 
-            if (parent == null)
+            if (parent is null)
                 throw new DomException(DomError.InvalidNodeType);
 
             var index = parent.ChildNodes.Index(refNode);
-            _start = new Boundary { Node = parent, Offset = index };
-            _end = new Boundary { Node = parent, Offset = index + 1 };
+            _start = new Boundary(parent, index);
+            _end = new Boundary(parent, index + 1);
         }
 
         public void SelectContent(INode refNode)
         {
-            if (refNode == null)
+            if (refNode is null)
                 throw new ArgumentNullException(nameof(refNode));
 
             if (refNode.NodeType == NodeType.DocumentType)
                 throw new DomException(DomError.InvalidNodeType);
 
             var length = refNode.ChildNodes.Length;
-            _start = new Boundary { Node = refNode, Offset = 0 };
-            _end = new Boundary { Node = refNode, Offset = length };
+            _start = new Boundary(refNode, 0);
+            _end = new Boundary(refNode, length);
         }
 
         public void ClearContent()
@@ -215,7 +216,7 @@
                 }
                 else
                 {
-                    var nodesToRemove = Nodes.Where(m => !Intersects(m.Parent)).ToArray();
+                    var nodesToRemove = Nodes.Where(m => !Intersects(m.Parent!)).ToArray();
 
                     if (!originalStart.Node.IsInclusiveAncestorOf(originalEnd.Node))
                     {
@@ -226,7 +227,7 @@
                             referenceNode = referenceNode.Parent;
                         }
 
-                        newBoundary = new Boundary { Node = referenceNode.Parent, Offset = referenceNode.Parent.ChildNodes.Index(referenceNode) + 1 };
+                        newBoundary = new Boundary(referenceNode.Parent!, referenceNode.Parent!.ChildNodes.Index(referenceNode) + 1);
                     }
                     else
                     {
@@ -243,7 +244,7 @@
 
                     foreach (var node in nodesToRemove)
                     {
-                        node.Parent.RemoveChild(node);
+                        node.Parent!.RemoveChild(node);
                     }
 
                     if (originalEnd.Node is ICharacterData)
@@ -262,7 +263,7 @@
 
         public IDocumentFragment ExtractContent()
         {
-            var fragment = _start.Node.Owner.CreateDocumentFragment();
+            var fragment = _start.Node.Owner!.CreateDocumentFragment();
 
             if (!_start.Equals(_end))
             {
@@ -286,7 +287,7 @@
 
                     while (!commonAncestor.IsInclusiveAncestorOf(originalEnd.Node))
                     {
-                        commonAncestor = commonAncestor.Parent;
+                        commonAncestor = commonAncestor.Parent!;
                     }
 
                     var firstPartiallyContainedChild = !originalStart.Node.IsInclusiveAncestorOf(originalEnd.Node) ?
@@ -307,7 +308,7 @@
                             referenceNode = referenceNode.Parent;
                         }
 
-                        newBoundary = new Boundary { Node = referenceNode, Offset = referenceNode.Parent.ChildNodes.Index(referenceNode) + 1 };
+                        newBoundary = new Boundary(referenceNode, referenceNode.Parent!.ChildNodes.Index(referenceNode) + 1);
                     }
 
                     if (firstPartiallyContainedChild is ICharacterData)
@@ -324,7 +325,7 @@
                     {
                         var clone = firstPartiallyContainedChild.Clone();
                         fragment.AppendChild(clone);
-                        var subrange = new Range(originalStart, new Boundary { Node = firstPartiallyContainedChild, Offset = firstPartiallyContainedChild.ChildNodes.Length });
+                        var subrange = new Range(originalStart, new Boundary(firstPartiallyContainedChild, firstPartiallyContainedChild.ChildNodes.Length));
                         var subfragment = subrange.ExtractContent();
                         fragment.AppendChild(subfragment);
                     }
@@ -346,7 +347,7 @@
                     {
                         var clone = lastPartiallyContainedchild.Clone();
                         fragment.AppendChild(clone);
-                        var subrange = new Range(new Boundary { Node = lastPartiallyContainedchild, Offset = 0 }, originalEnd);
+                        var subrange = new Range(new Boundary(lastPartiallyContainedchild, 0), originalEnd);
                         var subfragment = subrange.ExtractContent();
                         fragment.AppendChild(subfragment);
                     }
@@ -361,7 +362,7 @@
 
         public IDocumentFragment CopyContent()
         {
-            var fragment = _start.Node.Owner.CreateDocumentFragment();
+            var fragment = _start.Node.Owner!.CreateDocumentFragment();
 
             if (!_start.Equals(_end))
             {
@@ -384,7 +385,7 @@
 
                     while (!commonAncestor.IsInclusiveAncestorOf(originalEnd.Node))
                     {
-                        commonAncestor = commonAncestor.Parent;
+                        commonAncestor = commonAncestor.Parent!;
                     }
 
                     var firstPartiallyContainedChild = !originalStart.Node.IsInclusiveAncestorOf(originalEnd.Node) ?
@@ -409,7 +410,7 @@
                     {
                         var clone = firstPartiallyContainedChild.Clone();
                         fragment.AppendChild(clone);
-                        var subrange = new Range(originalStart, new Boundary { Node = firstPartiallyContainedChild, Offset = firstPartiallyContainedChild.ChildNodes.Length });
+                        var subrange = new Range(originalStart, new Boundary(firstPartiallyContainedChild, firstPartiallyContainedChild.ChildNodes.Length));
                         var subfragment = subrange.CopyContent();
                         fragment.AppendChild(subfragment);
                     }
@@ -430,7 +431,7 @@
                     {
                         var clone = lastPartiallyContainedchild.Clone();
                         fragment.AppendChild(clone);
-                        var subrange = new Range(new Boundary { Node = lastPartiallyContainedchild, Offset = 0 }, originalEnd);
+                        var subrange = new Range(new Boundary(lastPartiallyContainedchild, 0), originalEnd);
                         var subfragment = subrange.CopyContent();
                         fragment.AppendChild(subfragment);
                     }
@@ -442,19 +443,19 @@
 
         public void Insert(INode node)
         {
-            if (node == null)
+            if (node is null)
                 throw new ArgumentNullException(nameof(node));
 
             var snode = _start.Node;
             var type = snode.NodeType;
             var istext = type == NodeType.Text;
 
-            if (type == NodeType.ProcessingInstruction || type == NodeType.Comment || (istext && snode.Parent == null))
+            if (type == NodeType.ProcessingInstruction || type == NodeType.Comment || (istext && snode.Parent is null))
                 throw new DomException(DomError.HierarchyRequest);
 
             var referenceNode = istext ? snode : _start.ChildAtOffset;
-            var parent = referenceNode == null ? snode : referenceNode.Parent;
-            parent.EnsurePreInsertionValidity(node, referenceNode);
+            var parent = referenceNode is null ? snode : referenceNode.Parent;
+            parent!.EnsurePreInsertionValidity(node, referenceNode);
 
             if (istext)
             {
@@ -468,19 +469,19 @@
             }
 
             node.Parent?.RemoveChild(node);
-            var newOffset = referenceNode == null ? parent.ChildNodes.Length : parent.ChildNodes.Index(referenceNode);
+            var newOffset = referenceNode is null ? parent!.ChildNodes.Length : parent!.ChildNodes.Index(referenceNode);
             newOffset += node.NodeType == NodeType.DocumentFragment ? node.ChildNodes.Length : 1;
             parent.PreInsert(node, referenceNode);
 
             if (_start.Equals(_end))
             {
-                _end = new Boundary { Node = parent, Offset = newOffset };
+                _end = new Boundary(parent, newOffset);
             }
         }
 
         public void Surround(INode newParent)
         {
-            if (newParent == null)
+            if (newParent is null)
                 throw new ArgumentNullException(nameof(newParent));
 
             if (Nodes.Any(m => m.NodeType != NodeType.Text && IsPartiallyContained(m)))
@@ -515,7 +516,7 @@
 
         public Boolean Contains(INode node, Int32 offset)
         {
-            if (node == null)
+            if (node is null)
                 throw new ArgumentNullException(nameof(node));
 
             if (node.GetRoot() == Root)
@@ -534,7 +535,7 @@
 
         public RangePosition CompareBoundaryTo(RangeType how, IRange sourceRange)
         {
-            if (sourceRange == null)
+            if (sourceRange is null)
                 throw new ArgumentNullException(nameof(sourceRange));
 
             if (Root != sourceRange.Head.GetRoot())
@@ -547,22 +548,22 @@
             {
                 case RangeType.StartToStart:
                     thisPoint = _start;
-                    otherPoint = new Boundary { Node = sourceRange.Head, Offset = sourceRange.Start };
+                    otherPoint = new Boundary(sourceRange.Head, sourceRange.Start);
                     break;
 
                 case RangeType.StartToEnd:
                     thisPoint = _end;
-                    otherPoint = new Boundary { Node = sourceRange.Head, Offset = sourceRange.Start };
+                    otherPoint = new Boundary(sourceRange.Head, sourceRange.Start);
                     break;
 
                 case RangeType.EndToEnd:
                     thisPoint = _start;
-                    otherPoint = new Boundary { Node = sourceRange.Tail, Offset = sourceRange.End };
+                    otherPoint = new Boundary(sourceRange.Tail, sourceRange.End);
                     break;
 
                 case RangeType.EndToStart:
                     thisPoint = _end;
-                    otherPoint = new Boundary { Node = sourceRange.Tail, Offset = sourceRange.End };
+                    otherPoint = new Boundary(sourceRange.Tail, sourceRange.End);
                     break;
 
                 default:
@@ -574,7 +575,7 @@
 
         public RangePosition CompareTo(INode node, Int32 offset)
         {
-            if (node == null)
+            if (node is null)
                 throw new ArgumentNullException(nameof(node));
 
             if (Root != _start.Node.GetRoot())
@@ -600,7 +601,7 @@
 
         public Boolean Intersects(INode node)
         {
-            if (node == null)
+            if (node is null)
                 throw new ArgumentNullException(nameof(node));
 
             if (Root == node.GetRoot())
@@ -621,20 +622,25 @@
 
         public override String ToString()
         {
-            var s = StringBuilderPool.Obtain();
+            var sb = default(StringBuilder);
             var offset = Start;
             var dest = End;
-            var startText = Head as IText;
-            var endText = Tail as IText;
 
-            if (startText != null && Head == Tail)
+            if (Head is IText startText)
             {
-                return startText.Substring(offset, dest - offset);
+                if (Head == Tail)
+                {
+                    return startText.Substring(offset, dest - offset);
+                }
+                else
+                {
+                    sb ??= StringBuilderPool.Obtain();
+
+                    sb.Append(startText.Substring(offset, startText.Length - offset));
+                }
             }
-            else if (startText != null)
-            {
-                s.Append(startText.Substring(offset, startText.Length - offset));
-            }
+
+            sb ??= StringBuilderPool.Obtain();
 
             var nodes = CommonAncestor.Descendents<IText>();
 
@@ -642,16 +648,16 @@
             {
                 if (IsStartBefore(node, 0) && IsEndAfter(node, node.Length))
                 {
-                    s.Append(node.Text);
+                    sb.Append(node.Text);
                 }
             }
 
-            if (endText != null)
+            if (Tail is IText endText)
             {
-                s.Append(endText.Substring(0, dest));
+                sb.Append(endText.Substring(0, dest));
             }
 
-            return s.ToPool();
+            return sb.ToPool();
         }
 
         #endregion
@@ -660,22 +666,22 @@
 
         private Boolean IsStartBefore(INode node, Int32 offset)
         {
-            return _start < new Boundary { Node = node, Offset = offset };
+            return _start < new Boundary(node, offset);
         }
 
         private Boolean IsStartAfter(INode node, Int32 offset)
         {
-            return _start > new Boundary { Node = node, Offset = offset };
+            return _start > new Boundary(node, offset);
         }
 
         private Boolean IsEndBefore(INode node, Int32 offset)
         {
-            return _end < new Boundary { Node = node, Offset = offset };
+            return _end < new Boundary(node, offset);
         }
 
         private Boolean IsEndAfter(INode node, Int32 offset)
         {
-            return _end > new Boundary { Node = node, Offset = offset };
+            return _end > new Boundary(node, offset);
         }
 
         private Boolean IsPartiallyContained(INode node)
@@ -690,10 +696,16 @@
 
         #region Boundary
 
-        private struct Boundary : IEquatable<Boundary>
+        private readonly struct Boundary : IEquatable<Boundary>
         {
-            public INode Node;
-            public Int32 Offset;
+            public Boundary(INode node, Int32 offset)
+            {
+                Node = node;
+                Offset = offset;
+            }
+
+            public readonly INode Node;
+            public readonly Int32 Offset;
 
             public static Boolean operator >(Boundary a, Boundary b)
             {
@@ -726,7 +738,7 @@
                 }
             }
 
-            public INode ChildAtOffset => Node.ChildNodes.Length > Offset ? Node.ChildNodes[Offset] : null;
+            public INode? ChildAtOffset => Node.ChildNodes.Length > Offset ? Node.ChildNodes[Offset] : null;
         }
 
         #endregion

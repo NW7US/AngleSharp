@@ -1,7 +1,6 @@
 namespace AngleSharp.Dom
 {
     using System;
-    using System.IO;
 
     /// <summary>
     /// The base class for all characterdata implementations.
@@ -31,7 +30,7 @@ namespace AngleSharp.Dom
 
         #region Properties
 
-        public IElement PreviousElementSibling
+        public IElement? PreviousElementSibling
         {
             get
             {
@@ -47,9 +46,9 @@ namespace AngleSharp.Dom
                         {
                             found = true;
                         }
-                        else if (found && parent.ChildNodes[i] is IElement)
+                        else if (found && parent.ChildNodes[i] is IElement childEl)
                         {
-                            return (IElement)parent.ChildNodes[i];
+                            return childEl;
                         }
                     }
                 }
@@ -58,7 +57,7 @@ namespace AngleSharp.Dom
             }
         }
 
-        public IElement NextElementSibling
+        public IElement? NextElementSibling
         {
             get
             {
@@ -75,9 +74,9 @@ namespace AngleSharp.Dom
                         {
                             found = true;
                         }
-                        else if (found && parent.ChildNodes[i] is IElement)
+                        else if (found && parent.ChildNodes[i] is IElement childEl)
                         {
-                            return (IElement)parent.ChildNodes[i];
+                            return childEl;
                         }
                     }
                 }

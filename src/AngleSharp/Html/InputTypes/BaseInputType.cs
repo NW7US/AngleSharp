@@ -25,7 +25,7 @@ namespace AngleSharp.Html.InputTypes
         /// <summary>
         /// Simple regular expression for floating point numbers.
         /// </summary>
-        protected static readonly Regex Number = new Regex("^\\-?\\d+(\\.\\d+)?([eE][\\-\\+]?\\d+)?$");
+        protected static readonly Regex NumberPattern = new Regex("^\\-?\\d+(\\.\\d+)?([eE][\\-\\+]?\\d+)?$", RegexOptions.Compiled);
 
         private readonly IHtmlInputElement _input;
         private readonly Boolean _validate;
@@ -87,7 +87,7 @@ namespace AngleSharp.Html.InputTypes
         /// <summary>
         /// Tries to convert the given string to a number.
         /// </summary>
-        public virtual Double? ConvertToNumber(String value)
+        public virtual Double? ConvertToNumber(String? value)
         {
             return null;
         }
@@ -121,7 +121,7 @@ namespace AngleSharp.Html.InputTypes
         /// </summary>
         public virtual void ConstructDataSet(FormDataSet dataSet)
         {
-            dataSet.Append(_input.Name, _input.Value, _input.Type);
+            dataSet.Append(_input.Name!, _input.Value, _input.Type);
         }
 
         /// <summary>
@@ -300,13 +300,13 @@ namespace AngleSharp.Html.InputTypes
         /// <summary>
         /// Checks if the string does not follow the pattern.
         /// </summary>
-        protected static Boolean IsInvalidPattern(String pattern, String value)
+        protected static Boolean IsInvalidPattern(String? pattern, String? value)
         {
             if (!String.IsNullOrEmpty(pattern) && !String.IsNullOrEmpty(value))
             {
                 try
                 {
-                    var regex = new Regex(pattern, RegexOptions.ECMAScript | RegexOptions.CultureInvariant);
+                    var regex = new Regex(pattern, RegexOptions.ECMAScript | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100));
                     return !regex.IsMatch(value);
                 }
                 catch (Exception ex)
@@ -321,9 +321,9 @@ namespace AngleSharp.Html.InputTypes
         /// <summary>
         /// Tries to convert the value to a number using the default expression.
         /// </summary>
-        protected static Double? ToNumber(String value)
+        protected static Double? ToNumber(String? value)
         {
-            if (!String.IsNullOrEmpty(value) && Number.IsMatch(value))
+            if (!String.IsNullOrEmpty(value) && NumberPattern.IsMatch(value))
             {
                 return Double.Parse(value, CultureInfo.InvariantCulture);
             }

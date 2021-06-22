@@ -6,7 +6,9 @@ namespace AngleSharp.Text
     using AngleSharp.Html;
     using AngleSharp.Io;
     using System;
+    using System.Buffers;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
     using System.Reflection;
@@ -27,7 +29,8 @@ namespace AngleSharp.Text
         /// <param name="index">The index of the character.</param>
         /// <returns>True if the value has the char, otherwise false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Boolean Has(this String value, Char chr, Int32 index = 0)
+       
+        public static Boolean Has([NotNullWhen(true)] this String? value, Char chr, Int32 index = 0)
         {
             return value != null && value.Length > index && value[index] == chr;
         }
@@ -39,6 +42,7 @@ namespace AngleSharp.Text
         /// <returns>The compatibility string.</returns>
         internal static String GetCompatiblity(this QuirksMode mode)
         {
+
             var field = typeof(QuirksMode).GetField(mode.ToString());
             var description = field.GetCustomAttribute<DomDescriptionAttribute>()?.Description;
             return description ?? "CSS1Compat";
@@ -148,8 +152,8 @@ namespace AngleSharp.Text
         /// <param name="value">The value to convert.</param>
         /// <param name="defaultValue">The default value to consider (optional).</param>
         /// <returns>The converted enum value.</returns>
-        public static T ToEnum<T>(this String value, T defaultValue)
-            where T : struct, IComparable
+        public static T ToEnum<T>(this String? value, T defaultValue)
+            where T : struct, Enum
         {
             if (!String.IsNullOrEmpty(value) && Enum.TryParse(value, true, out T converted))
             {
@@ -165,7 +169,7 @@ namespace AngleSharp.Text
         /// <param name="value">The value to convert.</param>
         /// <param name="defaultValue">The default value to consider (optional).</param>
         /// <returns>The converted double.</returns>
-        public static Double ToDouble(this String value, Double defaultValue = 0.0)
+        public static Double ToDouble(this String? value, Double defaultValue = 0.0)
         {
             if (!String.IsNullOrEmpty(value) && Double.TryParse(value, NumberStyles.Any, NumberFormatInfo.InvariantInfo, out var converted))
             {
@@ -181,7 +185,7 @@ namespace AngleSharp.Text
         /// <param name="value">The value to convert.</param>
         /// <param name="defaultValue">The default value to consider (optional).</param>
         /// <returns>The converted integer.</returns>
-        public static Int32 ToInteger(this String value, Int32 defaultValue = 0)
+        public static Int32 ToInteger(this String? value, Int32 defaultValue = 0)
         {
             if (!String.IsNullOrEmpty(value) && Int32.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var converted))
             {
@@ -197,7 +201,7 @@ namespace AngleSharp.Text
         /// <param name="value">The value to convert.</param>
         /// <param name="defaultValue">The default value to consider (optional).</param>
         /// <returns>The converted unsigned integer.</returns>
-        public static UInt32 ToInteger(this String value, UInt32 defaultValue = 0)
+        public static UInt32 ToInteger(this String? value, UInt32 defaultValue = 0)
         {
             if (!String.IsNullOrEmpty(value) && UInt32.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var converted))
             {
@@ -213,7 +217,7 @@ namespace AngleSharp.Text
         /// <param name="value">The value to convert.</param>
         /// <param name="defaultValue">The default value to consider (optional).</param>
         /// <returns>The converted boolean.</returns>
-        public static Boolean ToBoolean(this String value, Boolean defaultValue = false)
+        public static Boolean ToBoolean(this String? value, Boolean defaultValue = false)
         {
             if (!String.IsNullOrEmpty(value) && Boolean.TryParse(value, out var converted))
             {
@@ -249,7 +253,10 @@ namespace AngleSharp.Text
         /// <returns>The modified string with collapsed and stripped spaces.</returns>
         public static String CollapseAndStrip(this String str)
         {
-            var chars = new Char[str.Length];
+            if (str.Length == 0) return str;
+
+            var buffer = ArrayPool<Char>.Shared.Rent(str.Length);
+
             var hasSpace = true;
             var index = 0;
 
@@ -260,13 +267,13 @@ namespace AngleSharp.Text
                     if (!hasSpace)
                     {
                         hasSpace = true;
-                        chars[index++] = Symbols.Space;
+                        buffer[index++] = Symbols.Space;
                     }
                 }
                 else
                 {
                     hasSpace = false;
-                    chars[index++] = str[i];
+                    buffer[index++] = str[i];
                 }
             }
 
@@ -275,7 +282,11 @@ namespace AngleSharp.Text
                 index--;
             }
 
-            return new String(chars, 0, index);
+            var result = new String(buffer, 0, index);
+
+            ArrayPool<char>.Shared.Return(buffer);
+
+            return result;
         }
 
         /// <summary>
@@ -285,7 +296,8 @@ namespace AngleSharp.Text
         /// <returns>The modified string with collapsed spaces.</returns>
         public static String Collapse(this String str)
         {
-            var chars = new List<Char>();
+            var sb = StringBuilderPool.Obtain();
+
             var hasSpace = false;
 
             for (var i = 0; i < str.Length; i++)
@@ -294,18 +306,18 @@ namespace AngleSharp.Text
                 {
                     if (!hasSpace)
                     {
-                        chars.Add(Symbols.Space);
+                        sb.Append(Symbols.Space);
                         hasSpace = true;
                     }
                 }
                 else
                 {
                     hasSpace = false;
-                    chars.Add(str[i]);
+                    sb.Append(str[i]);
                 }
             }
 
-            return new String(chars.ToArray());
+            return sb.ToPool();
         }
 
         /// <summary>
@@ -335,7 +347,7 @@ namespace AngleSharp.Text
         /// <param name="other">The other string.</param>
         /// <returns>True if both are equal, false otherwise.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Boolean Is(this String current, String other) =>
+        public static Boolean Is(this String? current, String? other) =>
             String.Equals(current, other, StringComparison.Ordinal);
 
         /// <summary>
@@ -345,7 +357,7 @@ namespace AngleSharp.Text
         /// <param name="other">The other string.</param>
         /// <returns>True if both are equal, false otherwise.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Boolean Isi(this String current, String other) =>
+        public static Boolean Isi(this String? current, String? other) =>
             String.Equals(current, other, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
@@ -356,7 +368,7 @@ namespace AngleSharp.Text
         /// <param name="item2">The second item to compare to.</param>
         /// <returns>True if the element is equal to one of the elements, otherwise false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Boolean IsOneOf(this String element, String item1, String item2)
+        public static Boolean IsOneOf(this String? element, String item1, String item2)
             => element.Is(item1) || element.Is(item2);
 
         /// <summary>
@@ -429,75 +441,56 @@ namespace AngleSharp.Text
         }
 
         /// <summary>
-        /// Strips all leading and trailing space characters from the given string.
+        /// Strips all leading and trailing space characters from the given char array.
         /// </summary>
         /// <param name="str">The string to examine.</param>
         /// <returns>A new string, which excludes the leading and tailing spaces.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static String StripLeadingTrailingSpaces(this String str) =>
-            StripLeadingTrailingSpaces(str.ToCharArray());
-
-        /// <summary>
-        /// Strips all leading and trailing space characters from the given char array.
-        /// </summary>
-        /// <param name="array">The array of characters to examine.</param>
-        /// <returns>A new string, which excludes the leading and tailing spaces.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static String StripLeadingTrailingSpaces(this Char[] array)
+        public static String StripLeadingTrailingSpaces(this string str)
         {
             var start = 0;
-            var end = array.Length - 1;
+            var end = str.Length - 1;
 
-            while (start < array.Length && array[start].IsSpaceCharacter())
+            while (start < str.Length && str[start].IsSpaceCharacter())
             {
                 start++;
             }
 
-            while (end > start && array[end].IsSpaceCharacter())
+            while (end > start && str[end].IsSpaceCharacter())
             {
                 end--;
             }
 
-            return new String(array, start, 1 + end - start);
+            return str.Substring(start, 1 + end - start);
         }
-
-        /// <summary>
-        /// Splits the string with the given char delimiter.
-        /// </summary>
-        /// <param name="str">The string to examine.</param>
-        /// <param name="c">The delimiter character.</param>
-        /// <returns>The list of tokens.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static String[] SplitWithoutTrimming(this String str, Char c) =>
-            SplitWithoutTrimming(str.ToCharArray(), c);
 
         /// <summary>
         /// Splits the char array with the given char delimiter.
         /// </summary>
-        /// <param name="chars">The char array to examine.</param>
+        /// <param name="str">The string to examine.</param>
         /// <param name="c">The delimiter character.</param>
         /// <returns>The list of tokens.</returns>
-        public static String[] SplitWithoutTrimming(this Char[] chars, Char c)
+        public static String[] SplitWithoutTrimming(this string str, Char c)
         {
             var list = new List<String>();
             var index = 0;
 
-            for (var i = 0; i < chars.Length; i++)
+            for (var i = 0; i < str.Length; i++)
             {
-                if (chars[i] == c)
+                if (str[i] == c)
                 {
                     if (i > index)
                     {
-                        list.Add(new String(chars, index, i - index));
+                        list.Add(str.Substring(index, i - index));
                     }
 
                     index = i + 1;
                 }
             }
 
-            if (chars.Length > index)
+            if (str.Length > index)
             {
-                list.Add(new String(chars, index, chars.Length - index));
+                list.Add(str.Substring(index, str.Length - index));
             }
 
             return list.ToArray();
@@ -533,30 +526,34 @@ namespace AngleSharp.Text
         public static String[] SplitSpaces(this String str)
         {
             var list = new List<String>();
-            var buffer = new List<Char>();
-            var chars = str.ToCharArray();
+            var buffer = ArrayPool<Char>.Shared.Rent(str.Length);
+            int c = 0;
 
-            for (var i = 0; i <= chars.Length; i++)
+            for (var i = 0; i <= str.Length; i++)
             {
-                if (i == chars.Length || chars[i].IsSpaceCharacter())
+                if (i == str.Length || str[i].IsSpaceCharacter())
                 {
-                    if (buffer.Count > 0)
+                    if (c > 0)
                     {
-                        var token = buffer.ToArray().StripLeadingTrailingSpaces();
+                        var token = new String(buffer, 0, c).StripLeadingTrailingSpaces();
 
                         if (token.Length != 0)
                         {
                             list.Add(token);
                         }
 
-                        buffer.Clear();
+                        c = 0;
                     }
                 }
                 else
                 {
-                    buffer.Add(chars[i]);
+                    buffer[c] = str[i];
+
+                    c++;
                 }
             }
+
+            ArrayPool<char>.Shared.Return(buffer);
 
             return list.ToArray();
         }
@@ -565,35 +562,39 @@ namespace AngleSharp.Text
         /// Splits the string with the given char delimiter and trims the leading and tailing spaces.
         /// </summary>
         /// <param name="str">The string to examine.</param>
-        /// <param name="c">The delimiter character.</param>
+        /// <param name="ch">The delimiter character.</param>
         /// <returns>The list of tokens.</returns>
-        public static String[] SplitWithTrimming(this String str, Char c)
+        public static String[] SplitWithTrimming(this String str, Char ch)
         {
             var list = new List<String>();
-            var buffer = new List<Char>();
-            var chars = str.ToCharArray();
+            var buffer = ArrayPool<Char>.Shared.Rent(str.Length);
+            int c = 0;
 
-            for (var i = 0; i <= chars.Length; i++)
+            for (var i = 0; i <= str.Length; i++)
             {
-                if (i == chars.Length || chars[i] == c)
+                if (i == str.Length || str[i] == ch)
                 {
-                    if (buffer.Count > 0)
+                    if (c > 0)
                     {
-                        var token = buffer.ToArray().StripLeadingTrailingSpaces();
+                        var token = new String(buffer, 0, c).StripLeadingTrailingSpaces();
 
                         if (token.Length != 0)
                         {
                             list.Add(token);
                         }
 
-                        buffer.Clear();
+                        c = 0;                        
                     }
                 }
                 else
                 {
-                    buffer.Add(chars[i]);
+                    buffer[c] = str[i];
+
+                    c++;
                 }
             }
+
+            ArrayPool<char>.Shared.Return(buffer);
 
             return list.ToArray();
         }
@@ -648,7 +649,11 @@ namespace AngleSharp.Text
                     var character = value[i];
 
                     if (character == Symbols.Null)
+                    {
+                        builder.ReturnToPool();
+
                         throw new DomException(DomError.InvalidCharacter);
+                    }
 
                     if (character == Symbols.DoubleQuote || character == Symbols.ReverseSolidus)
                     {
@@ -804,11 +809,11 @@ namespace AngleSharp.Text
         /// <returns>
         /// The valid encoding type string or null.
         /// </returns>
-        public static String ToEncodingType(this String encType) =>
+        public static String? ToEncodingType(this String? encType) =>
             encType.Isi(MimeTypeNames.Plain) ||
             encType.Isi(MimeTypeNames.MultipartForm) ||
             encType.Isi(MimeTypeNames.ApplicationJson) ?
-                encType.ToLowerInvariant() : null;
+                encType?.ToLowerInvariant() : null;
 
         /// <summary>
         /// Converts the current string to one of the form methods.
@@ -817,10 +822,10 @@ namespace AngleSharp.Text
         /// <returns>
         /// The valid form method string or null.
         /// </returns>
-        public static String ToFormMethod(this String method) =>
+        public static String? ToFormMethod(this String? method) =>
             method.Isi(FormMethodNames.Get) ||
             method.Isi(FormMethodNames.Post) ||
             method.Isi(FormMethodNames.Dialog) ?
-                method.ToLowerInvariant() : null;
+                method?.ToLowerInvariant() : null;
     }
 }

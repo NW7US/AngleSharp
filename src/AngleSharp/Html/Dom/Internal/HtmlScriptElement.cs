@@ -3,6 +3,8 @@ namespace AngleSharp.Html.Dom
     using AngleSharp.Dom;
     using AngleSharp.Io;
     using AngleSharp.Io.Processors;
+    using AngleSharp.Text;
+
     using System;
     using System.Threading;
     using System.Threading.Tasks;
@@ -25,7 +27,7 @@ namespace AngleSharp.Html.Dom
 
         #region ctor
 
-        public HtmlScriptElement(Document owner, String prefix = null, Boolean parserInserted = false, Boolean started = false)
+        public HtmlScriptElement(Document owner, String? prefix = null, Boolean parserInserted = false, Boolean started = false)
             : base(owner, TagNames.Script, prefix, NodeFlags.Special | NodeFlags.LiteralText)
         {
             _forceAsync = false;
@@ -38,21 +40,21 @@ namespace AngleSharp.Html.Dom
 
         #region Properties
 
-        public IDownload CurrentDownload => _request?.Download;
+        public IDownload? CurrentDownload => _request?.Download;
 
-        public String Source
+        public String? Source
         {
             get => this.GetOwnAttribute(AttributeNames.Src);
             set => this.SetOwnAttribute(AttributeNames.Src, value);
         }
 
-        public String Type
+        public String? Type
         {
             get => this.GetOwnAttribute(AttributeNames.Type);
             set => this.SetOwnAttribute(AttributeNames.Type, value);
         }
 
-        public String CharacterSet
+        public String? CharacterSet
         {
             get => this.GetOwnAttribute(AttributeNames.Charset);
             set => this.SetOwnAttribute(AttributeNames.Charset, value);
@@ -64,7 +66,7 @@ namespace AngleSharp.Html.Dom
             set => TextContent = value;
         }
 
-        public String CrossOrigin
+        public String? CrossOrigin
         {
             get => this.GetOwnAttribute(AttributeNames.CrossOrigin);
             set => this.SetOwnAttribute(AttributeNames.CrossOrigin, value);
@@ -82,7 +84,7 @@ namespace AngleSharp.Html.Dom
             set => this.SetBoolAttribute(AttributeNames.Async, value);
         }
 
-        public String Integrity
+        public String? Integrity
         {
             get => this.GetOwnAttribute(AttributeNames.Integrity);
             set => this.SetOwnAttribute(AttributeNames.Integrity, value);
@@ -116,7 +118,7 @@ namespace AngleSharp.Html.Dom
         
         internal Task RunAsync(CancellationToken cancel)
         {
-            return _request?.RunAsync(cancel);
+            return _request?.RunAsync(cancel)!;
         }
 
         /// <summary>
@@ -143,7 +145,7 @@ namespace AngleSharp.Html.Dom
             {
                 return false;
             }
-            else if (_request.Engine == null)
+            else if (_request.Engine is null)
             {
                 return false;
             }
@@ -154,7 +156,7 @@ namespace AngleSharp.Html.Dom
 
             _started = true;
 
-            if (!String.IsNullOrEmpty(eventAttr) && !String.IsNullOrEmpty(forAttr))
+            if (eventAttr is { Length: > 0 } && forAttr is { Length: >0 })
             {
                 eventAttr = eventAttr.Trim();
                 forAttr = forAttr.Trim();
@@ -164,8 +166,8 @@ namespace AngleSharp.Html.Dom
                     eventAttr = eventAttr.Substring(0, eventAttr.Length - 2);
                 }
 
-                var isWindow = forAttr.Equals(AttributeNames.Window, StringComparison.OrdinalIgnoreCase);
-                var isLoadEvent = eventAttr.Equals("onload", StringComparison.OrdinalIgnoreCase);
+                var isWindow = forAttr.Isi(AttributeNames.Window);
+                var isLoadEvent = eventAttr.Isi("onload");
 
                 if (!isWindow || !isLoadEvent)
                 {
@@ -177,7 +179,7 @@ namespace AngleSharp.Html.Dom
             {
                 if (src.Length != 0)
                 {
-                    return InvokeLoadingScript(document, this.HyperReference(src));
+                    return InvokeLoadingScript(document, this.HyperReference(src)!);
                 }
 
                 document.QueueTask(FireErrorEvent);

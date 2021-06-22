@@ -1,6 +1,9 @@
+#nullable disable
+
 namespace AngleSharp.Io
 {
     using AngleSharp.Common;
+    using AngleSharp.Dom;
     using AngleSharp.Text;
     using System;
     using System.Collections.Generic;
